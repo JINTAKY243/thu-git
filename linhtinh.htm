@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hệ Thống Hạt 3D</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;1,300&family=Syne:wght@300;400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --c-surface:rgba(255,255,255,0.03);
+  --c-border:rgba(255,255,255,0.07);
+  --c-text:#c8cce0;
+  --c-muted:#50547a;
+  --c-accent:#7eb8f7;
+}
+body{
+  background-color: #020205; 
+  color:var(--c-text);
+  font-family:'Syne',sans-serif;
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+#bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#three-canvas{ position:fixed; inset:0; z-index:1; }
+#cam-wrap{
+  position:fixed; bottom:24px; right:24px; width:200px; height:150px;
+  border-radius:12px; overflow:hidden; border:1px solid var(--c-border);
+  z-index:10; box-shadow:0 8px 32px rgba(0,0,0,0.6);
+}
+#cam-wrap video{ width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0.75; }
+#cam-overlay{ position:absolute; inset:0; pointer-events:none; }
+#cam-label{
+  position:absolute; bottom:6px; left:0; right:0; text-align:center;
+  font-family:'DM Mono',monospace; font-size:9px; color:var(--c-muted); letter-spacing:1px;
+}
+#panel{
+  position:fixed; top:24px; left:24px; z-index:10; display:flex; flex-direction:column; gap:10px; max-width:260px;
+}
+.panel-title{ font-size:18px; font-weight:600; letter-spacing:0.5px; color:#fff; line-height:1.2; }
+.panel-sub{ font-family:'DM Mono',monospace; font-size:10px; color:var(--c-muted); letter-spacing:2px; margin-top:-4px; }
+.card{
+  background:var(--c-surface); border:1px solid var(--c-border); border-radius:12px;
+  padding:12px 14px; backdrop-filter:blur(12px); display:flex; flex-direction:column; gap:8px;
+}
+.card-label{ font-family:'DM Mono',monospace; font-size:9px; color:var(--c-muted); letter-spacing:2px; text-transform:uppercase; }
+.gesture-row{ display:flex; align-items:center; gap:8px; }
+.gesture-dot{ width:8px; height:8px; border-radius:50%; background:var(--c-muted); flex-shrink:0; transition:background 0.2s, box-shadow 0.2s; }
+.gesture-dot.active{ background:var(--c-accent); box-shadow:0 0 8px var(--c-accent); }
+.gesture-text{ font-family:'DM Mono',monospace; font-size:10px; color:var(--c-text); }
+.scale-track{ height:3px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+.scale-fill{ height:100%; background:var(--c-accent); border-radius:2px; transition:width 0.1s; width:30%; }
+.color-row{ display:flex; align-items:center; gap:10px; }
+.color-row label{ font-family:'DM Mono',monospace; font-size:10px; color:var(--c-text); flex:1; }
+input[type=color]{ width:34px; height:28px; border:1px solid var(--c-border); border-radius:6px; background:none; cursor:pointer; padding:2px; }
+.slider-row{ display:flex; align-items:center; gap:8px; }
+.slider-row label{ font-family:'DM Mono',monospace; font-size:10px; color:var(--c-text); min-width:55px; }
+input[type=range]{ flex:1; accent-color:var(--c-accent); cursor:pointer; height:3px; }
+.slider-val{ font-family:'DM Mono',monospace; font-size:10px; color:var(--c-accent); min-width:30px; text-align:right; }
+#startBtn{
+  padding:10px 16px; border-radius:8px; border:1px solid rgba(126,184,247,0.35); background:rgba(126,184,247,0.08);
+  color:var(--c-accent); font-family:'Syne',sans-serif; font-size:12px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all 0.2s; width:100%; text-align:center;
+}
+#startBtn:hover{ background:rgba(126,184,247,0.18); border-color:rgba(126,184,247,0.7); }
+#startBtn:disabled{ opacity:0.4; cursor:default; }
+#statusLine{ font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px; text-align:center; padding:4px 0; text-transform:uppercase; font-weight:600; color:#fff; text-shadow: 0 0 8px var(--c-accent); }
+#instructions{ position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:5; text-align:center; pointer-events:none; opacity:1; transition:opacity 1s; }
+#instructions.hidden{ opacity:0; }
+#instructions h2{ font-size:13px; font-weight:400; color:rgba(255,255,255,0.2); letter-spacing:3px; font-family:'DM Mono',monospace; line-height:2; }
+#error-box {
+  position: fixed; top: 20px; right: 20px; background: rgba(255, 50, 50, 0.9); color: white;
+  padding: 15px 20px; border-radius: 8px; font-family: sans-serif; font-size: 13px; z-index: 9999;
+  display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-width: 300px;
+}
+</style>
+</head>
+<body>
+<div id="error-box">Lỗi: Trình duyệt đang chặn AI. Hãy mở file bằng "Live Server" trên VS Code!</div>
+<canvas id="bg-canvas"></canvas>
+<canvas id="three-canvas"></canvas>
+<div id="cam-wrap">
+  <video id="vid" autoplay playsinline muted></video>
+  <canvas id="cam-overlay"></canvas>
+  <div id="cam-label">CAMERA PREVIEW</div>
+</div>
+<div id="panel">
+  <div>
+    <div class="panel-title">Hạt 3D</div>
+    <div class="panel-sub">HAND GESTURE CONTROL</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Trạng thái cử chỉ</div>
+    <div class="gesture-row">
+      <div class="gesture-dot" id="dot-left"></div>
+      <span class="gesture-text" id="txt-left">Tay trái — chưa phát hiện</span>
+    </div>
+    <div class="gesture-row">
+      <div class="gesture-dot" id="dot-right"></div>
+      <span class="gesture-text" id="txt-right">Tay phải — chưa phát hiện</span>
+    </div>
+    <div class="card-label" style="margin-top:2px">Trạng thái hiện tại</div>
+    <div class="scale-track"><div class="scale-fill" id="scale-fill"></div></div>
+    <div id="statusLine">ĐANG CHỜ...</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Màu hạt</div>
+    <div class="color-row">
+      <label>Màu chính</label>
+      <input type="color" id="colorPicker" value="#7eb8f7">
+    </div>
+    <div class="color-row">
+      <label>Màu phụ</label>
+      <input type="color" id="colorPicker2" value="#f77eb8">
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+      <span class="card-label" style="margin:0;flex:1">Trộn màu</span>
+      <input type="range" id="mixSlider" min="0" max="100" value="0" style="width:80px;accent-color:var(--c-accent)">
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Cấu hình hạt</div>
+    <div class="slider-row">
+      <label>Số lượng</label>
+      <input type="range" id="countSlider" min="1000" max="25000" value="18000" step="1000">
+      <span class="slider-val" id="countVal">18000</span>
+    </div>
+    <div class="slider-row">
+      <label>Tốc độ</label>
+      <input type="range" id="speedSlider" min="1" max="10" value="4" step="1">
+      <span class="slider-val" id="speedVal">4</span>
+    </div>
+    <div class="slider-row">
+      <label>Kích thước</label>
+      <input type="range" id="sizeSlider2" min="5" max="30" value="15" step="1">
+      <span class="slider-val" id="sizeVal">15</span>
+    </div>
+  </div>
+  <button id="startBtn">🎥 Bật Camera</button>
+</div>
+<div id="instructions">
+  <h2>
+    5 Ngón: Mạng lưới trung tâm<br>
+    3 Ngón: Vòng vô cực di chuyển<br>
+    2 Ngón: Thiên thạch rơi<br>
+    Nắm tay: Khối cầu bám tay
+  </h2>
+</div>
+<script id="bgVertexShader" type="x-shader/x-vertex">
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = vec4(position, 1.0);
+  }
+</script>
+<script id="bgFragmentShader" type="x-shader/x-fragment">
+  uniform float uTime;
+  varying vec2 vUv;
+  float random(vec2 st) { return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123); }
+  float noise(vec2 st) {
+      vec2 i = floor(st); vec2 f = fract(st);
+      float a = random(i); float b = random(i + vec2(1.0, 0.0));
+      float c = random(i + vec2(0.0, 1.0)); float d = random(i + vec2(1.0, 1.0));
+      vec2 u = f*f*(3.0-2.0*f);
+      return mix(a, b, u.x) + (c - a)* u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+  }
+  void main() {
+      vec2 uv = vUv;
+      vec3 color = vec3(0.01, 0.01, 0.03); 
+      vec2 nuv = uv * 1.5 + vec2(uTime * 0.01, sin(uTime*0.005)*0.1);
+      float n = noise(nuv) * 0.5 + noise(nuv * 3.0) * 0.25;
+      vec3 nebulaColor = vec3(0.1, 0.05, 0.2) * n; 
+      nebulaColor += vec3(0.02, 0.1, 0.2) * noise(nuv * 2.0 - uTime * 0.01) * 0.5; 
+      color += nebulaColor;
+      float star1 = random(uv * 100.0);
+      if (star1 > 0.99) { color += vec3(0.8, 0.9, 1.0) * (sin(uTime * 3.0 + random(uv) * 10.0) * 0.5 + 0.5); }
+      float star2 = random(uv * 200.0 + 1.0);
+      if (star2 > 0.995) { color += vec3(1.0, 0.8, 0.9) * (sin(uTime * 5.0 + random(uv) * 20.0) * 0.5 + 0.5) * 0.5; }
+      gl_FragColor = vec4(color, 1.0);
+  }
+</script>
+<script id="vertexShader" type="x-shader/x-vertex">
+    uniform float uTime;
+    uniform float uScale;
+    uniform int uMode;
+    uniform vec3 uTargetA;
+    uniform vec3 uTargetB;
+    uniform vec3 uHand1;
+    uniform vec3 uHand2;
+    uniform float uPointSize;
+    attribute vec3 defaultPosition;
+    attribute float aGroup;
+    attribute float aRandom;
+    varying float vAlpha;
+    varying float vMode;
+    void main() {
+        vec3 pos = defaultPosition;
+        vAlpha = 1.0;
+        vMode = float(uMode);
+        float angle = uTime * 0.2;
+        mat3 rot = mat3(cos(angle), 0.0, sin(angle), 0.0, 1.0, 0.0, -sin(angle), 0.0, cos(angle));
+        if (uMode == 3) {
+            pos = pos * 0.7; pos = rot * pos;
+            if (aGroup < 0.5) pos += uHand1; else pos += uHand2;
+        } 
+        else if (uMode == 0) {
+            pos = pos * uScale; 
+            pos = rot * pos;
+            pos += uTargetA; 
+        }
+        else if (uMode == 5) {
+            float t = aRandom * 6.28318 + uTime * 1.5;
+            float a = 3.5;
+            float denom = 1.0 + sin(t)*sin(t);
+            vec3 infPos = vec3(
+                (a * cos(t)) / denom,
+                (a * sin(t) * cos(t)) / denom,
+                sin(aRandom * 6.28 + uTime) * 0.8
+            );
+            vec3 noise = vec3(sin(aRandom*74.0), cos(aRandom*83.0), sin(aRandom*92.0));
+            infPos += noise * 0.3;
+            pos = rot * infPos + uTargetA; 
+            vAlpha = 0.8 + sin(t * 5.0) * 0.2;
+        }
+        else if (uMode == 2) { 
+            float mId = floor(fract(aRandom * 13.37) * 8.0);
+            float mTime = fract(uTime * 0.5 + mId * 0.12);
+            vec3 start = vec3((mId - 3.5) * 3.0, 7.0, -2.0);
+            vec3 fall = vec3(-2.0, -16.0, 0.0) * mTime;
+            vec3 core = start + fall;
+            float life = fract(uTime * 4.0 + aRandom * 100.0);
+            vec3 spread = vec3(sin(aRandom*11.0), cos(aRandom*22.0), sin(aRandom*33.0)) * life * 1.5;
+            vec3 trail = vec3(1.5, 7.0, 0.0) * life * 2.0;
+            pos = core + spread + trail;
+            vAlpha = 1.0 - life;
+        }
+        vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
+        gl_Position = projectionMatrix * mvPos;
+        float pSize = uPointSize;
+        if (uMode == 2 || uMode == 5) pSize = 14.0;
+        gl_PointSize = clamp((pSize / -mvPos.z) * vAlpha, 0.0, 150.0);
+    }
+</script>
+<script id="fragmentShader" type="x-shader/x-fragment">
+    uniform vec3 uColor;
+    varying float vAlpha;
+    varying float vMode;
+    void main() {
+        vec2 coord = gl_PointCoord - vec2(0.5);
+        if (length(coord) > 0.5) discard;
+        vec3 finalColor = uColor;
+        if (vMode == 2.0) { 
+            finalColor = mix(uColor, vec3(1.0, 0.4, 0.0), 1.0 - vAlpha);
+        } else if (vMode == 5.0) {
+            finalColor = mix(uColor, vec3(0.4, 0.9, 1.0), 0.4); 
+        }
+        gl_FragColor = vec4(finalColor, vAlpha);
+    }
+</script>
+<script id="lineFragmentShader" type="x-shader/x-fragment">
+    uniform vec3 uColor;
+    uniform float uNetAlpha;
+    varying float vAlpha;
+    void main() {
+        gl_FragColor = vec4(uColor, vAlpha * uNetAlpha * 0.2);
+    }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script>
+'use strict';
+const bgCanvas = document.getElementById('bg-canvas');
+const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, antialias: false });
+bgRenderer.setSize(window.innerWidth, window.innerHeight);
+const bgScene = new THREE.Scene();
+const bgCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const bgUniforms = { uTime: { value: 0 } };
+const bgMaterial = new THREE.ShaderMaterial({
+  uniforms: bgUniforms, vertexShader: document.getElementById('bgVertexShader').textContent,
+  fragmentShader: document.getElementById('bgFragmentShader').textContent, depthWrite: false
+});
+bgScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMaterial));
+const canvas3d = document.getElementById('three-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+const scene = new THREE.Scene();
+const camera3d = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera3d.position.set(0, 0, 5);
+window.addEventListener('resize', () => {
+  camera3d.aspect = window.innerWidth / window.innerHeight;
+  camera3d.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  bgRenderer.setSize(window.innerWidth, window.innerHeight);
+});
+let PARTICLE_COUNT = 18000;
+let particleGeo, particleSystem, lineSystem;
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  return {r,g,b};
+}
+let color1 = hexToRgb('#7eb8f7');
+let color2 = hexToRgb('#f77eb8');
+let mixRatio = 0;
+const uniforms = {
+    uTime: { value: 0 }, uScale: { value: 1.5 }, uColor: { value: new THREE.Color(0x7eb8f7) },
+    uMode: { value: 0 }, uTargetA: { value: new THREE.Vector3() }, uTargetB: { value: new THREE.Vector3() },
+    uHand1: { value: new THREE.Vector3() }, uHand2: { value: new THREE.Vector3() },
+    uPointSize: { value: 15.0 }, uNetAlpha: { value: 0.0 }
+};
+const shaderMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms, vertexShader: document.getElementById('vertexShader').textContent,
+    fragmentShader: document.getElementById('fragmentShader').textContent,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+});
+const lineMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms, vertexShader: document.getElementById('vertexShader').textContent,
+    fragmentShader: document.getElementById('lineFragmentShader').textContent,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+});
+function buildParticles() {
+  if (particleSystem) { scene.remove(particleSystem); particleGeo.dispose(); }
+  if (lineSystem) { scene.remove(lineSystem); }
+  PARTICLE_COUNT = parseInt(document.getElementById('countSlider').value);
+  particleGeo = new THREE.BufferGeometry();
+  const posArray = new Float32Array(PARTICLE_COUNT * 3);
+  const groupArray = new Float32Array(PARTICLE_COUNT);
+  const randomArray = new Float32Array(PARTICLE_COUNT);
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const phi = Math.acos(-1 + (2*i)/PARTICLE_COUNT);
+    const theta = Math.sqrt(PARTICLE_COUNT * Math.PI) * phi;
+    posArray[i*3] = Math.cos(theta)*Math.sin(phi);
+    posArray[i*3+1] = Math.sin(theta)*Math.sin(phi);
+    posArray[i*3+2] = Math.cos(phi);
+    groupArray[i] = i < PARTICLE_COUNT / 2 ? 0.0 : 1.0;
+    randomArray[i] = Math.random();
+  }
+  particleGeo.setAttribute('defaultPosition', new THREE.BufferAttribute(posArray, 3));
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(PARTICLE_COUNT*3), 3));
+  particleGeo.setAttribute('aGroup', new THREE.BufferAttribute(groupArray, 1));
+  particleGeo.setAttribute('aRandom', new THREE.BufferAttribute(randomArray, 1));
+  const indices = [];
+  const half = Math.floor(PARTICLE_COUNT / 2);
+  for(let i=0; i<PARTICLE_COUNT; i++){
+      if(i < half){
+          if(i + 13 < half) indices.push(i, i + 13);
+          if(i + 21 < half) indices.push(i, i + 21);
+      } else {
+          if(i + 13 < PARTICLE_COUNT) indices.push(i, i + 13);
+          if(i + 21 < PARTICLE_COUNT) indices.push(i, i + 21);
+      }
+  }
+  particleGeo.setIndex(indices);
+  particleSystem = new THREE.Points(particleGeo, shaderMaterial);
+  scene.add(particleSystem);
+  lineSystem = new THREE.LineSegments(particleGeo, lineMaterial);
+  scene.add(lineSystem);
+}
+function refreshColors() {
+  const mix = mixRatio;
+  const finalR = color1.r * (1-mix) + color2.r * mix;
+  const finalG = color1.g * (1-mix) + color2.g * mix;
+  const finalB = color1.b * (1-mix) + color2.b * mix;
+  uniforms.uColor.value.setRGB(finalR, finalG, finalB);
+}
+buildParticles();
+refreshColors();
+let targetScale = 1.5, currentScale = 1.5;
+let targetNetAlpha = 0.0, currentNetAlpha = 0.0;
+let rawTA = new THREE.Vector3(), rawTB = new THREE.Vector3();
+let rawH1 = new THREE.Vector3(), rawH2 = new THREE.Vector3();
+const scaleFactor = 6.0;
+const toWorld = (p) => new THREE.Vector3((p.x-0.5)*scaleFactor, -(p.y-0.5)*scaleFactor, 0);
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.1);
+  const speed = parseInt(document.getElementById('speedSlider').value) * 0.5;
+  bgUniforms.uTime.value += dt;
+  bgRenderer.render(bgScene, bgCamera);
+  uniforms.uTime.value += dt * speed;
+  currentScale = THREE.MathUtils.lerp(currentScale, targetScale, 0.1);
+  uniforms.uScale.value = currentScale;
+  currentNetAlpha = THREE.MathUtils.lerp(currentNetAlpha, targetNetAlpha, 0.1);
+  uniforms.uNetAlpha.value = currentNetAlpha;
+  uniforms.uTargetA.value.lerp(rawTA, 0.2);
+  uniforms.uTargetB.value.lerp(rawTB, 0.2);
+  uniforms.uHand1.value.lerp(rawH1, 0.2);
+  uniforms.uHand2.value.lerp(rawH2, 0.2);
+  renderer.render(scene, camera3d);
+}
+animate();
+const vid = document.getElementById('vid');
+const camOverlay = document.getElementById('cam-overlay');
+const coctx = camOverlay.getContext('2d');
+const dotLeft  = document.getElementById('dot-left');
+const dotRight = document.getElementById('dot-right');
+const txtLeft  = document.getElementById('txt-left');
+const txtRight = document.getElementById('txt-right');
+const scaleFill = document.getElementById('scale-fill');
+const statusLine = document.getElementById('statusLine');
+const errorBox = document.getElementById('error-box');
+let hands = null;
+function onHandResults(results) {
+  const cw = camOverlay.width, ch = camOverlay.height;
+  coctx.clearRect(0, 0, cw, ch);
+  let leftDetected = false, rightDetected = false;
+  if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    document.getElementById('instructions').classList.add('hidden');
+    for (let h = 0; h < results.multiHandLandmarks.length; h++) {
+      const lm = results.multiHandLandmarks[h];
+      const hand = results.multiHandedness[h].label;
+      const CONNECTIONS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],[0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]];
+      coctx.strokeStyle = 'rgba(126,184,247,0.6)';
+      coctx.lineWidth = 1;
+      for (const [a,b] of CONNECTIONS) {
+        coctx.beginPath();
+        coctx.moveTo((1-lm[a].x)*cw, lm[a].y*ch);
+        coctx.lineTo((1-lm[b].x)*cw, lm[b].y*ch);
+        coctx.stroke();
+      }
+      for (const t of [4,8,12,16,20]) {
+        coctx.beginPath();
+        coctx.arc((1-lm[t].x)*cw, lm[t].y*ch, 3, 0, Math.PI*2);
+        coctx.fillStyle = 'rgba(126,184,247,0.9)';
+        coctx.fill();
+      }
+      if (hand === 'Left') leftDetected = true;
+      if (hand === 'Right') rightDetected = true;
+    }
+    if (results.multiHandLandmarks.length === 2) {
+        uniforms.uMode.value = 3;
+        rawH1.copy(toWorld(results.multiHandLandmarks[0][8]));
+        rawH2.copy(toWorld(results.multiHandLandmarks[1][8]));
+        targetNetAlpha = 0.5;
+        statusLine.textContent = 'CHẾ ĐỘ: 2 QUẢ CẦU';
+        scaleFill.style.width = '100%';
+    } 
+    else if (results.multiHandLandmarks.length === 1) {
+        const lm = results.multiHandLandmarks[0];
+        const wrist = lm[0];
+        const dThumb = Math.hypot(lm[4].x - wrist.x, lm[4].y - wrist.y);
+        const dIndex = Math.hypot(lm[8].x - wrist.x, lm[8].y - wrist.y);
+        const dMid   = Math.hypot(lm[12].x - wrist.x, lm[12].y - wrist.y);
+        const dRing  = Math.hypot(lm[16].x - wrist.x, lm[16].y - wrist.y);
+        const dPinky = Math.hypot(lm[20].x - wrist.x, lm[20].y - wrist.y);
+        const bThumb = Math.hypot(lm[2].x - wrist.x, lm[2].y - wrist.y);
+        const bIndex = Math.hypot(lm[5].x - wrist.x, lm[5].y - wrist.y);
+        const bMid   = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y);
+        const bRing  = Math.hypot(lm[13].x - wrist.x, lm[13].y - wrist.y);
+        const bPinky = Math.hypot(lm[17].x - wrist.x, lm[17].y - wrist.y);
+        const isThumbOpen = dThumb > bThumb * 1.2;
+        const isIndexOpen = dIndex > bIndex * 1.4;
+        const isMidOpen   = dMid > bMid * 1.4;
+        const isRingOpen  = dRing > bRing * 1.4;
+        const isPinkyOpen = dPinky > bPinky * 1.4;
+        const mainFingersOpen = [isIndexOpen, isMidOpen, isRingOpen, isPinkyOpen].filter(Boolean).length;
+        const totalOpen = mainFingersOpen + (isThumbOpen ? 1 : 0);
+        const handSize = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y);
+        const openness = ((dThumb+dIndex+dMid+dRing+dPinky) / 5) / (handSize * 2.5);
+        if (totalOpen >= 4) {
+            uniforms.uMode.value = 0;
+            targetScale = Math.max(1.0, openness * 18.0); 
+            targetNetAlpha = openness > 0.4 ? openness * 0.8 : 0.0;
+            rawTA.set(0, 0, 0); 
+            statusLine.textContent = 'MẠNG LƯỚI TRUNG TÂM';
+            scaleFill.style.width = Math.min(100, Math.round((targetScale / 18.0) * 100)) + '%';
+        } 
+        else if (totalOpen === 3) {
+            uniforms.uMode.value = 5;
+            targetNetAlpha = 0.0;
+            rawTA.copy(toWorld(lm[9])); 
+            statusLine.textContent = 'VÒNG VÔ CỰC';
+            scaleFill.style.width = '60%';
+        }
+        else if (totalOpen === 2) {
+            uniforms.uMode.value = 2;
+            let activeTips = [];
+            [4, 8, 12, 16, 20].forEach(tip => {
+                const isTh = tip === 4;
+                const mcp = lm[tip - 2 - (isTh ? 0 : 1)];
+                const tD = Math.hypot(lm[tip].x - lm[0].x, lm[tip].y - lm[0].y);
+                const mD = Math.hypot(mcp.x - lm[0].x, mcp.y - lm[0].y);
+                if(tD > mD * (isTh ? 1.2 : 1.4)) activeTips.push(lm[tip]);
+            });
+            if(activeTips.length < 2) activeTips.push(lm[8], lm[4]); 
+            rawTA.copy(toWorld(activeTips[0]));
+            rawTB.copy(toWorld(activeTips[1]));
+            targetNetAlpha = 0.0;
+            statusLine.textContent = 'THIÊN THẠCH LỬA';
+            scaleFill.style.width = '50%';
+        }
+        else {
+            uniforms.uMode.value = 0; 
+            targetScale = 1.0; 
+            targetNetAlpha = 0.0;
+            rawTA.copy(toWorld(lm[9])); 
+            statusLine.textContent = 'KHỐI CẦU BÁM TAY';
+            scaleFill.style.width = '30%';
+        }
+    }
+  } else {
+      uniforms.uMode.value = 0;
+      targetScale = 1.5;
+      targetNetAlpha = 0.0;
+      rawTA.set(0, 0, 0);
+      statusLine.textContent = 'ĐANG CHỜ CAMERA...';
+      scaleFill.style.width = '0%';
+  }
+  dotLeft.classList.toggle('active', leftDetected);
+  txtLeft.textContent = leftDetected ? 'Tay trái — Đã nhận diện' : 'Tay trái — Chưa phát hiện';
+  dotRight.classList.toggle('active', rightDetected);
+  txtRight.textContent = rightDetected ? 'Tay phải — Đã nhận diện' : 'Tay phải — Chưa phát hiện';
+}
+document.getElementById('startBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true; btn.textContent = 'Đang kết nối...';
+  statusLine.textContent = 'Xin cấp quyền camera...';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{width:320,height:240,facingMode:'user'} });
+    vid.srcObject = stream;
+    await new Promise(r => vid.onloadedmetadata = r);
+    vid.play();
+    camOverlay.width  = vid.videoWidth  || 320;
+    camOverlay.height = vid.videoHeight || 240;
+    statusLine.textContent = 'Đang tải AI (Vui lòng đợi)...';
+    hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+    hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.65, minTrackingConfidence: 0.5 });
+    hands.onResults(onHandResults);
+    await hands.initialize().catch(err => {
+        errorBox.style.display = 'block';
+        throw new Error("Trình duyệt chặn AI");
+    });
+    const mpCamera = new Camera(vid, { onFrame: async () => { await hands.send({ image: vid }); }, width: 320, height: 240 });
+    mpCamera.start();
+    btn.textContent = '✓ Camera đang chạy';
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '🎥 Thử lại';
+    statusLine.textContent = 'LỖI CAMERA HOẶC AI';
+  }
+});
+document.getElementById('colorPicker').addEventListener('input', e => { color1 = hexToRgb(e.target.value); refreshColors(); });
+document.getElementById('colorPicker2').addEventListener('input', e => { color2 = hexToRgb(e.target.value); refreshColors(); });
+document.getElementById('mixSlider').addEventListener('input', e => { mixRatio = e.target.value / 100; refreshColors(); });
+const countSlider = document.getElementById('countSlider');
+const countVal    = document.getElementById('countVal');
+countSlider.addEventListener('input', e => { countVal.textContent = e.target.value; });
+countSlider.addEventListener('change', buildParticles);
+document.getElementById('speedSlider').addEventListener('input', e => { document.getElementById('speedVal').textContent = e.target.value; });
+document.getElementById('sizeSlider2').addEventListener('input', e => { 
+    document.getElementById('sizeVal').textContent = e.target.value; 
+    uniforms.uPointSize.value = parseFloat(e.target.value);
+});
+let isDragging = false, lastMX = 0, lastMY = 0;
+canvas3d.addEventListener('mousedown', e => { isDragging=true; lastMX=e.clientX; lastMY=e.clientY; });
+window.addEventListener('mouseup', () => { isDragging=false; });
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  scene.rotation.y += (e.clientX - lastMX) * 0.005;
+  scene.rotation.x += (e.clientY - lastMY) * 0.005;
+  lastMX=e.clientX; lastMY=e.clientY;
+});
+window.addEventListener('wheel', e => { camera3d.position.z = Math.max(2, Math.min(12, camera3d.position.z + e.deltaY * 0.01)); });
+</script>
+</body>
+</html>
