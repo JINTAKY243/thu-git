@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Đăng Ký Mua Hoa</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; display: flex; justify-content: center; background-color: #fff; }
+    .container { width: 1000px; position: relative; margin-top: 20px; }
+    
+    /* Header & Logo */
+    .header-top { position: relative; height: 100px; margin-bottom: 20px; }
+    .connecting-line { position: absolute; top: 50px; left: 60px; width: 480px; height: 120px; border-top: 1.5px solid #8FBC8F; border-left: 1.5px solid #8FBC8F; border-top-left-radius: 80px; z-index: 1; }
+    
+    .logo-wrap { position: absolute; right: 220px; top: 10px; text-align: center; background: white; padding: 0 15px; z-index: 2; }
+    .logo-main { background-color: #e32636; color: white; font-size: 36px; font-weight: bold; font-family: Impact, sans-serif; padding: 5px 25px; border-radius: 8px; display: inline-block; letter-spacing: 2px; }
+    .logo-sub { color: #388E3C; font-size: 12px; font-weight: bold; margin-top: 5px; border-bottom: 2px solid #388E3C; padding-bottom: 3px; text-transform: uppercase; }
+    
+    .main-content { display: flex; align-items: flex-start; }
+    
+    /* Menu bên trái */
+    .left-menu { width: 220px; position: relative; padding-top: 20px; }
+    .vertical-line { position: absolute; top: 0; left: 60px; width: 1.5px; height: 260px; background-color: #8FBC8F; z-index: 1; }
+    .left-menu ul { list-style: none; padding: 0; margin: 0; position: relative; z-index: 2; }
+    .left-menu li { color: #e32636; font-size: 15px; margin-bottom: 35px; display: flex; align-items: center; cursor: pointer; }
+    .left-menu li::before { content: ''; position: absolute; left: 54px; width: 13px; height: 13px; background-color: #e32636; border-radius: 50%; box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3); }
+    .left-menu span { margin-left: 80px; font-weight: bold; }
+    
+    .rose-img { margin-top: 10px; padding-left: 10px; width: 180px; }
+    
+    /* Form đăng ký */
+    .form-section { flex: 1; border: 1px solid #ddd; border-top: none; }
+    .black-banner { background-color: black; color: white; text-align: right; padding: 8px 20px; font-weight: bold; font-size: 16px; }
+    .form-title { text-align: center; font-size: 24px; font-weight: bold; margin: 25px 0; color: #000; }
+    .red-note { color: #e32636; font-size: 14px; margin-bottom: 15px; padding: 0 20px; line-height: 1.4; }
+    
+    table { width: 100%; font-size: 14px; border-spacing: 0 10px; padding: 0 10px; }
+    td { padding: 2px 5px; vertical-align: middle; }
+    .col-label { text-align: right; width: 120px; font-weight: 500; }
+    input[type="text"], select, textarea { border: 1px solid #999; padding: 4px; outline: none; }
+    .input-long { width: 380px; }
+    .input-medium { width: 260px; }
+    .input-short { width: 160px; }
+    .input-mini { width: 60px; }
+    textarea { width: 380px; height: 90px; resize: none; border: 1px solid #ccc; }
+    
+    .buttons { text-align: left; padding-left: 130px; margin: 15px 0 20px 0; }
+    .buttons button { padding: 3px 12px; border: 1px solid #888; background: #eee; cursor: pointer; font-size: 13px; margin-right: 5px; }
+    
+    /* Ảnh lẵng hoa bên phải */
+    .right-image { width: 280px; text-align: center; padding-top: 30px; }
+    .right-image img { width: 90%; }
+    
+    /* Footer */
+    .footer { background-color: black; color: white; text-align: center; padding: 10px; font-size: 14px; margin-top: 10px; clear: both; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-top">
+        <div class="connecting-line"></div>
+        <div class="logo-wrap">
+            <div class="logo-main">HOA CẢNH</div>
+            <div class="logo-sub">HỘI HOA LAN, CÂY CẢNH THÀNH PHỐ HỒ CHÍ MINH</div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="left-menu">
+            <div class="vertical-line"></div>
+            <ul>
+                <li><span>Trang chủ</span></li>
+                <li><span>Tin Tức</span></li>
+                <li><span>Hộp thư</span></li>
+                <li><span>Góc thư giãn</span></li>
+                <li><span>Hoa - Cây cảnh</span></li>
+            </ul>
+            <img src="h2.png" alt="Hoa hồng" class="rose-img">
+        </div>
+        
+        <div class="form-section">
+            <div class="black-banner">Welcome to Hoa cảnh tui nè</div>
+            <div class="form-title">ĐĂNG KÝ MUA HOA</div>
+            <div class="red-note">Quý độc giả hãy điền đầy đủ các thông tin theo yêu cầu để nhận được sản phẩm hoa, cây cảnh ưa thích nhất</div>
+            
+            <form>
+                <table>
+                    <tr>
+                        <td class="col-label">Họ và tên:</td>
+                        <td><input type="text" class="input-medium"> (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Địa chỉ:</td>
+                        <td><input type="text" class="input-long"> (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Điện thoại:</td>
+                        <td><input type="text" class="input-short"> (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Email:</td>
+                        <td><input type="text" class="input-medium"> (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Loại hoa:</td>
+                        <td>
+                            <select><option>Hoa Hồng</option></select> 
+                            Màu 
+                            <select><option>Đỏ</option></select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Số lượng:</td>
+                        <td><input type="text" class="input-mini"> (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Đơn vị tính:</td>
+                        <td>
+                            <input type="radio" name="unit"> Nhánh
+                            <input type="radio" name="unit"> Bó
+                            <input type="radio" name="unit"> Chậu
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-label">Thanh toán:</td>
+                        <td>
+                            <input type="radio" name="pay"> Tiền mặt
+                            <input type="radio" name="pay"> Chuyển khoản
+                            <input type="radio" name="pay"> Master card
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-label" style="vertical-align: top;">Yêu cầu:</td>
+                        <td><textarea></textarea></td>
+                    </tr>
+                </table>
+                <div class="buttons">
+                    <button type="button">Đăng ký</button>
+                    <button type="button">Nhập lại</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="right-image">
+            <img src="h1.png" alt="Lẵng hoa">
+        </div>
+    </div>
+    
+    <div class="footer">
+        Bản quyền thuộc công ty Hoa cảnh Tui nè, Q12, Tp. Hồ Chí Minh
+    </div>
+</div>
+
+</body>
+</html>
