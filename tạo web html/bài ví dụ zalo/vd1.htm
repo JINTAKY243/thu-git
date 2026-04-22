@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        width: 800px;
+        margin: auto;
+      }
+    </style>
+    <title>Đăng ký thông tin</title>
+  </head>
+  <body>
+    <h2>ĐĂNG KÝ THÔNG TIN CÁ NHÂN</h2>
+
+    <form>
+      -
+      <table style="width: 100%">
+        <tr>
+          <td style="width: 30%">Tài khoản</td>
+          <td style="width: 70%">
+            <input type="text" name="tk" style="width: 250px" />
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 30%">Mật khẩu</td>
+          <td style="width: 70%">
+            <input type="password" name="mk" style="width: 250px" />
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 30%">Nhập lại mật khẩu</td>
+          <td style="width: 70%">
+            <input type="password" name="nlmk" style="width: 250px" />
+          </td>
+        </tr>
+        <tr>
+          <td style="width: 30%">Email</td>
+          <td><input type="email" name="email" style="width: 250px" /></td>
+        </tr>
+        <tr>
+          <td>Họ tên</td>
+          <td><input type="text" name="hoten" style="width: 250px" /></td>
+        </tr>
+        <tr>
+          <td>giới tính</td>
+          <td>
+            <input type="radio" name="gt" value="nam" /> nam
+            <input type="radio" name="gt" value="nu" /> Nữ
+          </td>
+        </tr>
+        <tr>
+          <td>quê quán</td>
+          <td>
+            <select name="quequan">
+              <option value="thanhhoa">Thanh Hóa</option>
+              <option value="hanoi">Hà Nội</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>sở thích</td>
+          <td>
+            <input type="checkbox" name="sothich" value="dienanh" /> chơi game
+            <input type="checkbox" name="sothich" value="amnhac" /> âm nhạc
+            <input type="checkbox" name="sothich" value="thethao" /> thể thao
+          </td>
+        </tr>
+        <tr>
+          <td>ghi chú cá nhân</td>
+          <td><textarea name="ghichu" rows="5" cols="33"></textarea></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>
+            <button type="submit">Lưu</button>
+            <button type="reset">Nhập lại</button>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </body>
+</html>
