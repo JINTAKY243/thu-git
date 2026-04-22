@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Biểu mẫu khảo sát ITviec</title>
+    <style>
+      body {
+        background-color: rgb(22, 167, 246);
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+      }
+      .form-container {
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        width: 450px;
+      }
+      h1 {
+        text-align: center;
+        font-size: 24px;
+        margin-top: 0;
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="number"],
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .radio-item,
+      .checkbox-item {
+        margin-bottom: 8px;
+      }
+      .radio-item label,
+      .checkbox-item label {
+        display: inline;
+        font-weight: normal;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #21ba45;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #1a9c39;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <h1>Biểu mẫu khảo sát ITviec</h1>
+
+      <form>
+        <div class="form-group">
+          <label for="hoten">Họ tên</label>
+          <input type="text" id="hoten" placeholder="Nhập tên của bạn" />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="Nhập email của bạn" />
+        </div>
+
+        <div class="form-group">
+          <label for="tuoi">Tuổi</label>
+          <input type="number" id="tuoi" placeholder="Nhập tuổi" />
+        </div>
+
+        <div class="form-group">
+          <label for="nghenghiep">Hiện tại bạn đang là?</label>
+          <select id="nghenghiep">
+            <option value="hocsinh">Học sinh/Sinh viên</option>
+            <option value="dilam">Người đi làm</option>
+            <option value="khac">Khác</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Bạn sẽ giới thiệu ITviec với bạn bè chứ?</label>
+          <div class="radio-item">
+            <input type="radio" id="co" name="gioithieu" value="co" />
+            <label for="co">Có</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="khong" name="gioithieu" value="khong" />
+            <label for="khong">Không</label>
+          </div>
+          <div class="radio-item">
+            <input type="radio" id="cothe" name="gioithieu" value="cothe" />
+            <label for="cothe">Có thể</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label
+            >Ngôn ngữ lập trình và Framework bạn đã biết? (Có thể chọn nhiều đáp
+            án)</label
+          >
+          <div class="checkbox-item">
+            <input type="checkbox" id="lang_c" value="C" />
+            <label for="lang_c">C</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="lang_cpp" value="C++" />
+            <label for="lang_cpp">C++</label>
+          </div>
+          <div class="checkbox-item">
+            <input type="checkbox" id="lang_csharp" value="C#" />
+            <label for="lang_csharp">C#</label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cauhoi">Bạn có câu hỏi gì cho ITviec không?</label>
+          <textarea
+            id="cauhoi"
+            rows="4"
+            placeholder="Enter your comment here"
+          ></textarea>
+        </div>
+
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </body>
+</html>
